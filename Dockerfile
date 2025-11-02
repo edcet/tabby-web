@@ -29,7 +29,7 @@ WORKDIR /app
 
 # Rust (for python-cryptography)
 RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-ENV PATH /root/.cargo/bin:$PATH
+ENV PATH="/root/.cargo/bin:$PATH"
 
 RUN pip install -U setuptools cryptography==37.0.4 poetry==1.1.7
 COPY backend/pyproject.toml backend/poetry.lock ./
@@ -41,7 +41,7 @@ COPY backend/manage.py backend/gunicorn.conf.py ./
 COPY backend/tabby tabby
 COPY --from=frontend /app/build /frontend
 
-ARG BUNDLED_TABBY=1.0.187-nightly.1
+ARG BUNDLED_TABBY=1.0.189-nightly.2
 
 RUN FRONTEND_BUILD_DIR=/frontend /venv/*/bin/python ./manage.py collectstatic --noinput
 RUN APP_DIST_STORAGE=file:///app-dist /venv/*/bin/python ./manage.py add_version ${BUNDLED_TABBY}
@@ -50,9 +50,9 @@ RUN APP_DIST_STORAGE=file:///app-dist /venv/*/bin/python ./manage.py add_version
 
 FROM python:3.7-alpine AS backend
 
-ENV APP_DIST_STORAGE file:///app-dist
-ENV DOCKERIZE_VERSION v0.6.1
-ENV DOCKERIZE_ARCH amd64
+ENV APP_DIST_STORAGE="file:///app-dist"
+ENV DOCKERIZE_VERSION="v0.6.1"
+ENV DOCKERIZE_ARCH="amd64"
 ARG TARGETPLATFORM
 RUN if [ "$TARGETPLATFORM" = "linux/arm64" ]; \
     then export DOCKERIZE_ARCH=armhf; \
@@ -70,4 +70,4 @@ COPY --from=build-backend /venv /venv
 
 COPY backend/start.sh backend/manage.sh /
 RUN chmod +x /start.sh /manage.sh
-CMD ["/start.sh"]
+CMD ["/bin/sh", "-c", "[ -d /app-dist/1.0.189-nightly.2 ] || ./manage.sh add_version 1.0.189-nightly.2; ./start.sh"]
